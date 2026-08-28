@@ -50,7 +50,7 @@ def enroll_patient(
     new_patient = DBPatient(
         trial_id=trial.trial_id,
         subject_id=patient_data.subject_identifier,
-        enrollment_date=enrollment_date_val,  # <--- Added missing required DB column
+        enrollment_date=enrollment_date_val,
         status="Active",
     )
     db.add(new_patient)
@@ -80,21 +80,29 @@ def enroll_patient(
 
 
 @router.get("/", response_model=List[dict])
+@router.get("", response_model=List[dict])
 def list_patients(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(get_current_user),
 ):
     patients = db.query(DBPatient).all()
-    return [
-        {
-            "patient_id": p.patient_id,
-            "trial_id": p.trial_id,
-            "subject_id": p.subject_id,
-            "enrollment_date": p.enrollment_date,
-            "status": p.status,
-        }
-        for p in patients
-    ]
+    
+    result = []
+    for p in patients:
+        enrollment_date_str = None
+        if hasattr(p, "enrollment_date") and p.enrollment_date:
+            enrollment_date_str = str(p.enrollment_date)
+
+        result.append({
+            "id": getattr(p, "patient_id", None) or getattr(p, "id", None),
+            "patient_id": getattr(p, "patient_id", None),
+            "subject_id": getattr(p, "subject_id", ""),
+            "name": getattr(p, "subject_id", "") or f"Patient #{getattr(p, 'patient_id', '')}",
+            "trial_id": getattr(p, "trial_id", None),
+            "enrollment_date": enrollment_date_str,
+            "status": getattr(p, "status", "Active"),
+        })
+    return result
 
 
 @router.post("/fhir/observation", status_code=status.HTTP_201_CREATED)
