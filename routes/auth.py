@@ -85,5 +85,8 @@ def forgot_password(payload: ForgotPasswordSchema, db: Session = Depends(get_db)
     return {"message": "If that email exists, password reset instructions have been sent."}
 
 @router.get("/me", response_model=UserResponse)
-def get_my_profile(current_user: DBUser = Depends(get_current_user)):
-    return current_user
+def get_my_profile(current_user: TokenData = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(DBUser).filter(DBUser.id == current_user.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
