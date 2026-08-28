@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from pydantic import BaseModel, EmailStr
 
 from database import get_db
 from models.db_models import User as DBUser
@@ -66,3 +67,18 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordSchema, db: Session = Depends(get_db)):
+    # 1. Look up user by email in your database
+    user = db.query(DBUser).filter(DBUser.email == payload.email).first()
+    
+    if user:
+        # TODO: Generate secure reset token, save to DB, and dispatch email via SMTP/SendGrid
+        pass
+        
+    # 2. Always return a generic success message to prevent user enumeration attacks
+    return {"message": "If that email exists, password reset instructions have been sent."}
