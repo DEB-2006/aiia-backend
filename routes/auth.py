@@ -11,7 +11,8 @@ from middleware.auth import (
     get_password_hash,
     verify_password,
     create_access_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_current_user
 )
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Authentication & User Management"])
@@ -82,3 +83,7 @@ def forgot_password(payload: ForgotPasswordSchema, db: Session = Depends(get_db)
         
     # 2. Always return a generic success message to prevent user enumeration attacks
     return {"message": "If that email exists, password reset instructions have been sent."}
+
+@router.get("/me", response_model=UserResponse)
+def get_my_profile(current_user: DBUser = Depends(get_current_user)):
+    return current_user
