@@ -41,4 +41,16 @@ def list_trials(
     current_user: TokenData = Depends(require_roles(["Admin", "Investigator", "Sponsor", "Auditor", "Ethics_Committee"]))
 ):
     trials = db.query(DBTrial).all()
-    return trials
+    # Convert SQLAlchemy ORM objects into dictionaries to satisfy List[dict]
+    return [
+        {
+            "id": t.id,
+            "ctri_registration_number": t.ctri_registration_number,
+            "trial_title": t.trial_title,
+            "phase": t.phase,
+            "sponsor_name": t.sponsor_name,
+            "status": t.status,
+            "start_date": t.start_date.isoformat() if t.start_date else None
+        }
+        for t in trials
+    ]
