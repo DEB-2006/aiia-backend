@@ -9,6 +9,22 @@ from middleware.auth import require_roles
 
 router = APIRouter(prefix="/api/v1/trials", tags=["Clinical Trial Management"])
 
+
+def get_trial_primary_key(trial_obj: DBTrial):
+    """Dynamically resolves the primary key ID from the SQLAlchemy model instance."""
+    if hasattr(trial_obj, "id") and trial_obj.id is not None:
+        return trial_obj.id
+    if hasattr(trial_obj, "trial_id") and trial_obj.trial_id is not None:
+        return trial_obj.trial_id
+    
+    # Inspect model columns to extract primary key value
+    try:
+        pk_column = trial_obj.__table__.primary_key.columns.keys()[0]
+        return getattr(trial_obj, pk_column, None)
+    except Exception:
+        return None
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_trial(
@@ -35,16 +51,16 @@ def create_trial(
     db.commit()
     db.refresh(new_trial)
 
-    # Safely convert to dictionary response
     return {
-        "id": new_trial.id,
-        "ctri_registration_number": new_trial.ctri_registration_number,
-        "trial_title": new_trial.trial_title,
-        "phase": new_trial.phase,
-        "sponsor_name": new_trial.sponsor_name,
-        "status": new_trial.status,
-        "start_date": str(new_trial.start_date) if new_trial.start_date else None
+        "id": get_trial_primary_key(new_trial),
+        "ctri_registration_number": getattr(new_trial, "ctri_registration_number", ""),
+        "trial_title": getattr(new_trial, "trial_title", ""),
+        "phase": getattr(new_trial, "phase", ""),
+        "sponsor_name": getattr(new_trial, "sponsor_name", ""),
+        "status": getattr(new_trial, "status", ""),
+        "start_date": str(new_trial.start_date) if getattr(new_trial, "start_date", None) else None
     }
+
 
 @router.get("/", response_model=List[dict])
 @router.get("", response_model=List[dict])
@@ -54,11 +70,10 @@ def list_trials(
 ):
     trials = db.query(DBTrial).all()
     
-    # Safely convert every database model object into a serializable dictionary
     result = []
     for t in trials:
         result.append({
-            "id": getattr(t, "id", None),
+            "id": get_trial_primary_key(t),
             "ctri_registration_number": getattr(t, "ctri_registration_number", ""),
             "trial_title": getattr(t, "trial_title", ""),
             "phase": getattr(t, "phase", ""),
