@@ -54,7 +54,7 @@ def enroll_patient(
         status="Active",
     )
     db.add(new_patient)
-    db.flush()  # Generates patient_id before commit
+    db.flush()
 
     # 4. Create GCP audit trail entry
     audit_entry = DBAudit(
@@ -79,7 +79,6 @@ def enroll_patient(
     }
 
 
-@router.get("/", response_model=List[dict])
 @router.get("", response_model=List[dict])
 def list_patients(
     db: Session = Depends(get_db),
