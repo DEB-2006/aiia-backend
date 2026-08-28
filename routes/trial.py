@@ -25,7 +25,6 @@ def get_trial_primary_key(trial_obj: DBTrial):
         return None
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_trial(
     trial_data: dict,
@@ -62,7 +61,6 @@ def create_trial(
     }
 
 
-@router.get("/", response_model=List[dict])
 @router.get("", response_model=List[dict])
 def list_trials(
     db: Session = Depends(get_db),
