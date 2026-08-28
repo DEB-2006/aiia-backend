@@ -6,7 +6,7 @@ from pydantic import BaseModel, EmailStr
 
 from database import get_db
 from models.db_models import User as DBUser
-from models.user import UserRegister, UserResponse, Token
+from models.user import UserRegister, UserResponse, Token, TokenData
 from middleware.auth import (
     get_password_hash,
     verify_password,
@@ -86,7 +86,7 @@ def forgot_password(payload: ForgotPasswordSchema, db: Session = Depends(get_db)
 
 @router.get("/me", response_model=UserResponse)
 def get_my_profile(current_user: TokenData = Depends(get_current_user), db: Session = Depends(get_db)):
-    user = db.query(DBUser).filter(DBUser.id == current_user.user_id).first()
+    user = db.query(DBUser).filter(DBUser.user_id == current_user.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
