@@ -9,6 +9,7 @@ from middleware.auth import require_roles
 
 router = APIRouter(prefix="/api/v1/trials", tags=["Clinical Trial Management"])
 
+@router.post("/", status_code=status.HTTP_201_CREATED)
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_trial(
     trial_data: dict,
@@ -33,24 +34,36 @@ def create_trial(
     db.add(new_trial)
     db.commit()
     db.refresh(new_trial)
-    return new_trial
 
+    # Safely convert to dictionary response
+    return {
+        "id": new_trial.id,
+        "ctri_registration_number": new_trial.ctri_registration_number,
+        "trial_title": new_trial.trial_title,
+        "phase": new_trial.phase,
+        "sponsor_name": new_trial.sponsor_name,
+        "status": new_trial.status,
+        "start_date": str(new_trial.start_date) if new_trial.start_date else None
+    }
+
+@router.get("/", response_model=List[dict])
 @router.get("", response_model=List[dict])
 def list_trials(
     db: Session = Depends(get_db),
     current_user: TokenData = Depends(require_roles(["Admin", "Investigator", "Sponsor", "Auditor", "Ethics_Committee"]))
 ):
     trials = db.query(DBTrial).all()
-    # Convert SQLAlchemy ORM objects into dictionaries to satisfy List[dict]
-    return [
-        {
-            "id": t.id,
-            "ctri_registration_number": t.ctri_registration_number,
-            "trial_title": t.trial_title,
-            "phase": t.phase,
-            "sponsor_name": t.sponsor_name,
-            "status": t.status,
-            "start_date": t.start_date.isoformat() if t.start_date else None
-        }
-        for t in trials
-    ]
+    
+    # Safely convert every database model object into a serializable dictionary
+    result = []
+    for t in trials:
+        result.append({
+            "id": getattr(t, "id", None),
+            "ctri_registration_number": getattr(t, "ctri_registration_number", ""),
+            "trial_title": getattr(t, "trial_title", ""),
+            "phase": getattr(t, "phase", ""),
+            "sponsor_name": getattr(t, "sponsor_name", ""),
+            "status": getattr(t, "status", ""),
+            "start_date": str(t.start_date) if getattr(t, "start_date", None) else None
+        })
+    return result
