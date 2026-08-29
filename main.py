@@ -7,6 +7,7 @@ from routes.safety import router as safety_router
 from routes.intervention import router as intervention_router
 from routes.dashboard import router as dashboard_router
 from routes.trial import router as trial_router
+from routes.ethics import router as ethics_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -37,6 +38,7 @@ app.include_router(safety_router)
 app.include_router(intervention_router)
 app.include_router(dashboard_router)
 app.include_router(trial_router)
+app.include_router(ethics_router)
 
 @app.get("/")
 def home():
